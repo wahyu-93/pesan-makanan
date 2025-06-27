@@ -17,7 +17,9 @@ class BarcodeResource extends Resource
 {
     protected static ?string $model = Barcode::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-qr-code';
+
+    protected static ?string $navigationGroup = "Master";
 
     public static function form(Form $form): Form
     {
