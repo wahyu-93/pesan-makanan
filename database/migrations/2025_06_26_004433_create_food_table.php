@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('price_afterdiscount');
             $table->integer('discount')->nullable();
             $table->boolean('is_promo')->nullable()->default(true);
-            $table->foreignId('categories_id')->constrained('category')->cascadeOnDelete();
+            $table->foreignId('categories_id')->constrained('categories')->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });
