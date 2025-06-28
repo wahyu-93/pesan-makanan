@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\TransactionItemResource\Pages\ManageTransactionItems;
 use App\Filament\Resources\TransactionResource\Pages;
 use App\Filament\Resources\TransactionResource\RelationManagers;
 use App\Models\Transaction;
@@ -9,6 +10,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -20,6 +22,13 @@ class TransactionResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationGroup = 'Transaction';
+
+    protected static ?int $navigationSort = 1;
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
 
     public static function form(Form $form): Form
     {
@@ -61,28 +70,41 @@ class TransactionResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('code')
+                    ->label('Transaction Code')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Nama Customer')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('external_id')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('checkout_link')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('barcodes_id')
-                    ->numeric()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('barcode.qr_code')
+                    ->label('Barcode'),
                 Tables\Columns\TextColumn::make('payment_method')
+                    ->label('Peymanet Method')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('payment_status')
+                    ->label('Peymanet Status')
+                    ->badge()
+                    ->colors([
+                        'success' => fn($state) : bool => in_array($state,['SUCCESS', 'PAID', 'SETTLED']),
+                        'warnig'  => fn($state) : bool => $state === 'PENDING',
+                        'danger'  => fn($state) : bool => in_array($state, ['FAILED', 'EXPIRED']),
+                    ])
                     ->searchable(),
                 Tables\Columns\TextColumn::make('subtotal')
+                    ->label('Sub Total')
                     ->numeric()
-                    ->sortable(),
+                    ->money('IDR'),
                 Tables\Columns\TextColumn::make('ppn')
+                    ->label('PPN')
                     ->numeric()
-                    ->sortable(),
+                    ->money('IDR'),
                 Tables\Columns\TextColumn::make('total')
+                    ->label('Total')
                     ->numeric()
+                    ->money('IDR')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -103,6 +125,7 @@ class TransactionResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                self::seeDetailTransaction(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -115,6 +138,21 @@ class TransactionResource extends Resource
     {
         return [
             'index' => Pages\ManageTransactions::route('/'),
+
+            // menentukan route bisa dari sini
+            // tombol detailTransaction bagian url
+            'transaction-items.index' => ManageTransactionItems::route('{parent}/transaction')
         ];
+    }
+
+    public static function seeDetailTransaction()
+    {
+        return Action::make('detailTransaction')
+            ->button()
+            ->color('success')
+            ->url(fn(Transaction $record) : string => static::getUrl('transaction-items.index', [
+                'parent' => $record->id,
+            ]))
+            ->label('Detail Transaction');
     }
 }
