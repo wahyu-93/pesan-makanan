@@ -9,7 +9,7 @@ use Filament\Resources\Pages\ManageRecords;
 class ManageFood extends ManageRecords
 {
     protected static string $resource = FoodResource::class;
-
+    
     protected function getHeaderActions(): array
     {
         return [

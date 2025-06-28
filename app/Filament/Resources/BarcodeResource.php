@@ -19,7 +19,9 @@ class BarcodeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-qr-code';
 
-    protected static ?string $navigationGroup = "Master";
+    protected static ?string $navigationGroup = 'Master';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {

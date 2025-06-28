@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('description');
             $table->string('images');
             $table->integer('price');
-            $table->integer('price_afterdiscount');
+            $table->integer('price_afterdiscount')->nullable();
             $table->integer('discount')->nullable();
             $table->boolean('is_promo')->nullable()->default(true);
             $table->foreignId('categories_id')->constrained('categories')->cascadeOnDelete();

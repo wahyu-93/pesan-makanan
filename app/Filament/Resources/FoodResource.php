@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
 
 class FoodResource extends Resource
 {
@@ -21,32 +22,60 @@ class FoodResource extends Resource
 
     protected static ?string $navigationGroup = 'Master';
 
+    protected static ?int $navigationSort = 2;
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('description')
+                    ->columnSpanFull(),
+                Forms\Components\RichEditor::make('description')
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('images')
+                Forms\Components\FileUpload::make('images')
                     ->required()
-                    ->maxLength(255),
+                    ->image()
+                    ->directory('foods')
+                    ->columnSpanFull(),
                 Forms\Components\TextInput::make('price')
                     ->required()
                     ->numeric()
-                    ->prefix('$'),
+                    ->columnSpanFull()
+                    ->reactive()
+                    ->prefix('Rp'),
+                Forms\Components\Toggle::make('is_promo')
+                    ->reactive(),
+                Forms\Components\Select::make('discount')
+                    ->options([
+                        10 => '10%',
+                        25 => '25%',
+                        35 => '35%',
+                        50 => '50%',
+                    ])
+                    ->reactive()
+                    ->columnSpanFull()
+                    ->hidden(fn($get) => !$get('is_promo'))
+                    ->afterStateUpdated(function($set, $get, $state){
+                        if($get('is_promo') && $get('price') && $get('discount')){
+                            $discount = ($get('price') * (int)$get('discount')) / 100;
+                            $set('price_afterdiscount', $get('price') - $discount);
+                        }
+                        else {
+                            $set('price_afterdiscount', $get('price'));
+                        }
+                   }),
                 Forms\Components\TextInput::make('price_afterdiscount')
+                    ->label('Price After Discount')
+                    ->prefix('Rp')
+                    ->columnSpanFull()
+                    ->readOnly()
+                    ->hidden(fn($get) => !$get('is_promo')),
+                Forms\Components\Select::make('categories_id')   
                     ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('discount')
-                    ->numeric(),
-                Forms\Components\Toggle::make('is_promo'),
-                Forms\Components\TextInput::make('categories_id')
-                    ->required()
-                    ->numeric(),
+                    ->columnSpanFull()
+                    ->relationship('categories','name'),
             ]);
     }
 
@@ -56,21 +85,21 @@ class FoodResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('images')
-                    ->searchable(),
+                Tables\Columns\ImageColumn::make('image_url')
+                    ->label('Images')
+                    ->extraImgAttributes(['class' => 'w-16 h-16 object-cover']),
                 Tables\Columns\TextColumn::make('price')
-                    ->money()
+                    ->money('IDR')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('price_afterdiscount')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('discount')
-                    ->numeric()
+                    ->money('IDR')
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_promo')
                     ->boolean(),
-                Tables\Columns\TextColumn::make('categories_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('categories.name')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('discount')
+                    ->formatStateUsing(fn($state) => $state !==null ? $state . '%' : '-')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
