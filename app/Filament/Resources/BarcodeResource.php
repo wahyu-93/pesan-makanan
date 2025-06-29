@@ -129,9 +129,7 @@ class BarcodeResource extends Resource
             ->color('warning')
             ->button()
             ->visible(fn(Barcode $barcode) => $barcode->images)
-            ->action(function(Barcode $barcode){
-                return Storage::disk('public')->download($barcode->images);
-            })
+            ->url(fn (Barcode $barcode) => route('barcode.download', $barcode))
             ->icon('heroicon-s-arrow-down-tray');
     }
 }
